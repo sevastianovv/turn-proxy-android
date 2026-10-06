@@ -20,7 +20,7 @@ android {
     compileSdk = 37
 
     defaultConfig {
-        applicationId = "com.freeturn.app"
+        applicationId = "com.vkkvn.app"
         // gomobile собирает ядро с -androidapi 24.
         minSdk = 24
         targetSdk = 37

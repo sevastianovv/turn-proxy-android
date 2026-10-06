@@ -1,10 +1,10 @@
 package com.freeturn.app.service
 
 /**
- * Команды [ProxyService]. Ими же приходят внешние входы (тайл, виджет, ярлык,
- * кнопка в шторке) через [ProxyReceiver].
+ * Действия [ProxyService]. Они же отправляются внешней средой (тайл, виджет, шорткат,
+ * интент в автозапуске) через [ProxyReceiver].
  */
 object ProxyActions {
-    const val START = "com.freeturn.app.START_PROXY"
-    const val STOP = "com.freeturn.app.STOP_PROXY"
+    const val START = "com.vkkvn.app.START_PROXY"
+    const val STOP = "com.vkkvn.app.STOP_PROXY"
 }
