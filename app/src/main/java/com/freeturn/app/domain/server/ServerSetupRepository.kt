@@ -16,8 +16,12 @@ class ServerSetupRepository(context: Context, private val ssh: SSHManager) {
     suspend fun probe(cfg: SshConfig): Result<ProbeData> =
         control.run(cfg, ServerCommand.Probe).requireData<ProbeData>()
 
-    suspend fun apply(cfg: SshConfig, opts: ApplyOptions): Result<ApplyResult> =
-        control.run(cfg, ServerCommand.Apply(opts)).applyResult()
+    suspend fun apply(cfg: SshConfig, opts: ApplyOptions): Result<ApplyResult> {
+        val bin = if (control.hasLocalBinaries) {
+            control.uploadLocalBinary(cfg).getOrNull() ?: ""
+        } else ""
+        return control.run(cfg, ServerCommand.Apply(opts, bin = bin)).applyResult()
+    }
 
     /** Снос FreeTurn, нашего ft-wg0 и каталога установки; чужой WG скрипт не трогает. */
     suspend fun uninstall(cfg: SshConfig): Result<Unit> =

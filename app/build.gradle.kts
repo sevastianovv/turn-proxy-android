@@ -66,6 +66,7 @@ android {
             applicationIdSuffix = ".debug"
             versionNameSuffix = "-debug"
             resValue("string", "app_name", "FreeTurn Debug")
+            signingConfig = signingConfigs.findByName("release")
         }
         release {
             resValue("string", "app_name", "FreeTurn")
@@ -378,11 +379,9 @@ androidComponents {
             fetchFreeturnAar,
             FetchFreeturnAar::assetsDir
         )
-        if (variant.buildType == "debug" && freeturnAarVersion.get().trim().equals("local", ignoreCase = true)) {
-            val bins = tasks.register<LocalServerBinaries>("${variant.name}LocalServerBinaries") {
-                binaries.from(fileTree("libs") { include("server-linux*", "server_linux*") })
-            }
-            variant.sources.assets?.addGeneratedSourceDirectory(bins, LocalServerBinaries::assetsDir)
+        val bins = tasks.register<LocalServerBinaries>("${variant.name}LocalServerBinaries") {
+            binaries.from(fileTree("libs") { include("server-linux*", "server_linux*") })
         }
+        variant.sources.assets?.addGeneratedSourceDirectory(bins, LocalServerBinaries::assetsDir)
     }
 }

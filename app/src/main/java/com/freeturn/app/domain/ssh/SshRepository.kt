@@ -169,7 +169,7 @@ class SshRepository(context: Context, private val sshManager: SSHManager) {
         val cfg = activeSshConfig ?: return@withLock null
         if (cfg.ip.isEmpty()) return@withLock null
         var bin = ""
-        if (update && serverControl.hasLocalBinaries) {
+        if (serverControl.hasLocalBinaries) {
             _serverState.value = ServerState.Working(ServerOperation.UPLOAD_BUILD)
             logHeader("Загрузка локальной сборки сервера", "${cfg.username}@${cfg.ip}:${cfg.port}")
             bin = serverControl.uploadLocalBinary(cfg).getOrElse { e ->
