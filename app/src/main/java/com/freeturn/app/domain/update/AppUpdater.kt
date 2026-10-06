@@ -38,23 +38,20 @@ class AppUpdater(private val context: Context) {
         "0.0.0"
     }
 
-    /**
-     * @param silent true - игнорировать ошибки сети (автопроверка). false - показывать ошибки (ручная).
-     */
     suspend fun checkForUpdate(silent: Boolean = false) {
         _state.value = UpdateState.Checking
         try {
-            val release = withContext(Dispatchers.IO) { fetchLatestRelease() }
-            if (release == null) {
+            val target = withContext(Dispatchers.IO) { fetchLatestRelease() }
+            if (target == null) {
                 _state.value = if (silent) UpdateState.Idle
                 else UpdateState.Error(UpdateError.RELEASE_UNAVAILABLE)
                 return
             }
 
-            val remoteVersion = release.getString("tag_name").removePrefix("v")
+            val remoteVersion = target.release.getString("tag_name").removePrefix("v")
 
             if (isNewer(remoteVersion, getCurrentVersion())) {
-                latestApkUrl = findApkUrl(release)
+                latestApkUrl = findApkTarget(target.release, target.isGithub)
                 if (latestApkUrl != null) {
                     _state.value = UpdateState.Available(remoteVersion)
                 } else {
@@ -65,7 +62,6 @@ class AppUpdater(private val context: Context) {
                 _state.value = UpdateState.NoUpdate
             }
         } catch (e: CancellationException) {
-            // Штатная отмена корутины.
             throw e
         } catch (_: Exception) {
             _state.value = if (silent) UpdateState.Idle
@@ -82,21 +78,47 @@ class AppUpdater(private val context: Context) {
         _state.value = UpdateState.Downloading(0)
         try {
             withContext(Dispatchers.IO) {
-                val connection = URL(url).openConnection() as HttpURLConnection
-                connection.instanceFollowRedirects = true
-                connection.connectTimeout = 15_000
-                connection.readTimeout = 30_000
+                var currentUrl = url
+                var redirectCount = 0
+                var connection: HttpURLConnection? = null
+
                 try {
-                    connection.connect()
-                    // Защита от записи 404/редирект-страниц в APK.
-                    if (connection.responseCode !in 200..299) {
-                        throw java.io.IOException("HTTP ${connection.responseCode}")
+                    while (redirectCount < 5) {
+                        val conn = URL(currentUrl).openConnection() as HttpURLConnection
+                        conn.instanceFollowRedirects = false
+                        conn.connectTimeout = 15_000
+                        conn.readTimeout = 30_000
+
+                        if (currentUrl.contains("api.github.com")) {
+                            conn.setRequestProperty("Authorization", GITHUB_AUTH_HEADER)
+                            conn.setRequestProperty("Accept", "application/octet-stream")
+                        }
+
+                        conn.connect()
+                        val responseCode = conn.responseCode
+
+                        if (responseCode in 300..399) {
+                            val location = conn.getHeaderField("Location")
+                                ?: throw java.io.IOException("HTTP $responseCode without Location")
+                            conn.disconnect()
+                            currentUrl = location
+                            redirectCount++
+                            continue
+                        }
+
+                        if (responseCode !in 200..299) {
+                            throw java.io.IOException("HTTP $responseCode from $currentUrl")
+                        }
+
+                        connection = conn
+                        break
                     }
 
-                    val totalSize = connection.contentLength.toLong()
+                    val finalConn = connection ?: throw java.io.IOException("Too many redirects")
+                    val totalSize = finalConn.contentLength.toLong()
                     var downloaded = 0L
 
-                    connection.inputStream.use { input ->
+                    finalConn.inputStream.use { input ->
                         apkFile.outputStream().use { output ->
                             val buffer = ByteArray(8192)
                             var bytesRead: Int
@@ -112,10 +134,10 @@ class AppUpdater(private val context: Context) {
                         }
                     }
                 } finally {
-                    connection.disconnect()
+                    connection?.disconnect()
                 }
             }
-            // Чужая подпись = подмена (MITM на CDN-редиректе/компрометация релиза).
+
             val trusted = withContext(Dispatchers.IO) { isSignedBySameCert(apkFile) }
             if (!trusted) {
                 apkFile.delete()
@@ -154,22 +176,71 @@ class AppUpdater(private val context: Context) {
 
     // Private
 
-    private fun fetchLatestRelease(): JSONObject? {
-        val connection = URL(RELEASES_URL).openConnection() as HttpURLConnection
-        connection.setRequestProperty("Accept", "application/vnd.github+json")
-        connection.connectTimeout = 10_000
-        connection.readTimeout = 10_000
+    private data class ReleaseTarget(val release: JSONObject, val isGithub: Boolean)
 
-        return try {
-            if (connection.responseCode == 200) {
-                JSONObject(connection.inputStream.bufferedReader().readText())
-            } else null
-        } finally {
-            connection.disconnect()
+    private fun fetchLatestRelease(): ReleaseTarget? {
+        // 1. Primary mirror: Local Gitea (fast 3s timeout for quick fallback if off Wi-Fi)
+        try {
+            val connection = URL(GITEA_RELEASES_URL).openConnection() as HttpURLConnection
+            connection.setRequestProperty("Accept", "application/vnd.github+json")
+            connection.connectTimeout = 3_000
+            connection.readTimeout = 5_000
+            try {
+                if (connection.responseCode == 200) {
+                    val text = connection.inputStream.bufferedReader().readText()
+                    return ReleaseTarget(JSONObject(text), isGithub = false)
+                }
+            } finally {
+                connection.disconnect()
+            }
+        } catch (_: Exception) {
+            // Local Gitea unreachable, continue to secondary fallback
         }
+
+        // 2. Secondary mirror: Private GitHub mirror
+        try {
+            val connection = URL(GITHUB_RELEASES_URL).openConnection() as HttpURLConnection
+            connection.setRequestProperty("Accept", "application/vnd.github+json")
+            connection.setRequestProperty("Authorization", GITHUB_AUTH_HEADER)
+            connection.connectTimeout = 10_000
+            connection.readTimeout = 10_000
+            try {
+                if (connection.responseCode == 200) {
+                    val text = connection.inputStream.bufferedReader().readText()
+                    return ReleaseTarget(JSONObject(text), isGithub = true)
+                }
+            } finally {
+                connection.disconnect()
+            }
+        } catch (_: Exception) {
+            // Both unreachable
+        }
+
+        return null
     }
 
-    /** [apk] подписан тем же сертификатом и тем же packageName, что установленное приложение. */
+    private fun findApkTarget(release: JSONObject, isGithub: Boolean): String? {
+        val assets = release.getJSONArray("assets")
+        val apkUrlsByName = buildMap {
+            for (i in 0 until assets.length()) {
+                val asset = assets.getJSONObject(i)
+                val name = asset.getString("name")
+                if (name.endsWith(".apk")) {
+                    val downloadTarget = if (isGithub) {
+                        asset.getString("url")
+                    } else {
+                        asset.getString("browser_download_url")
+                    }
+                    put(name, downloadTarget)
+                }
+            }
+        }
+        for (abi in Build.SUPPORTED_ABIS) {
+            apkUrlsByName.entries.firstOrNull { it.key.contains(abi) }?.let { return it.value }
+        }
+        return null
+    }
+
     @Suppress("DEPRECATION")
     private fun isSignedBySameCert(apk: File): Boolean = try {
         val pm = context.packageManager
@@ -201,24 +272,15 @@ class AppUpdater(private val context: Context) {
         }.toSet()
     }
 
-    private fun findApkUrl(release: JSONObject): String? {
-        val assets = release.getJSONArray("assets")
-        val apkUrlsByName = buildMap {
-            for (i in 0 until assets.length()) {
-                val asset = assets.getJSONObject(i)
-                val name = asset.getString("name")
-                if (name.endsWith(".apk")) put(name, asset.getString("browser_download_url"))
-            }
-        }
-        for (abi in Build.SUPPORTED_ABIS) {
-            apkUrlsByName.entries.firstOrNull { it.key.contains(abi) }?.let { return it.value }
-        }
-        return null
-    }
-
     companion object {
-        private const val RELEASES_URL =
+        private const val GITEA_RELEASES_URL =
             "http://192.168.1.43:3000/api/v1/repos/vasa/turn-proxy-android/releases/latest"
+
+        private const val GITHUB_RELEASES_URL =
+            "https://api.github.com/repos/sevastianovv/turn-proxy-android/releases/latest"
+
+        private const val GITHUB_AUTH_HEADER =
+            "Bearer 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"
 
         fun isNewer(remote: String, current: String): Boolean {
             val r = remote.split(".").map { it.toIntOrNull() ?: 0 }
