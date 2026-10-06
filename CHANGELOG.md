@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.0.2.01] (2026-10-07)
+
+### Features
+* **branding:** переименование приложения в **VKKVN** (app_name, title, notifications, widget)
+* **logo:** новый фирменный кибер-логотип и адаптивные иконки (vector drawables + mipmap webp)
+* **versioning:** введена 4-сегментная схема версий `5.0.2.01` с расчетом versionCode для бесшовного обновления
+
 ## [5.0.2-custom] (2026-10-06)
 
 ### Features

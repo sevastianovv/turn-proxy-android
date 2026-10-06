@@ -3,7 +3,7 @@
 
     <!-- HomeScreen -->
     <string name="nav_home">Главная</string>
-    <string name="turn_proxy_title" translatable="false">Free Turn</string>
+    <string name="turn_proxy_title" translatable="false">VKKVN</string>
     <string name="proxy_active">Прокси активен</string>
     <string name="tunnel_active">Туннель активен</string>
     <string name="proxy_connecting">Подключение…</string>
@@ -334,7 +334,7 @@
     <string name="language_en" translatable="false">English</string>
 
     <!-- Notifications -->
-    <string name="notif_proxy_title" translatable="false">FreeTurn</string>
+    <string name="notif_proxy_title" translatable="false">VKKVN</string>
     <string name="notif_proxy_connecting">Подключение…</string>
     <string name="notif_channel_proxy">Прокси</string>
     <string name="notif_channel_captcha">Капча</string>
@@ -374,7 +374,7 @@
     <string name="tile_service_label" translatable="false">Free Turn</string>
 
     <!-- Виджет домашнего экрана -->
-    <string name="widget_label">FreeTurn - прокси</string>
+    <string name="widget_label">VKKVN - прокси</string>
     <string name="widget_status_on">Подключено</string>
     <string name="widget_status_connecting">Подключение…</string>
     <string name="widget_status_off">Отключено</string>

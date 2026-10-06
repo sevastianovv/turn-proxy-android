@@ -24,10 +24,14 @@ android {
         // gomobile собирает ядро с -androidapi 24.
         minSdk = 24
         targetSdk = 37
-        versionName = "5.0.2" // x-release-please-version
-        // Производный от versionName (M*10000+m*100+p) - release-please бампит только строку версии
-        versionCode = versionName!!.split(".").let { (ma, mi, pa) ->
-            ma.toInt() * 10000 + mi.toInt() * 100 + pa.toInt()
+                versionName = "5.0.2.01" // x-release-please-version
+        // 4-part custom build versioning: 5.0.2.01 (M*1000000 + m*10000 + p*100 + rev)
+        versionCode = versionName!!.split(".").let { parts ->
+            val ma = parts.getOrNull(0)?.toIntOrNull() ?: 5
+            val mi = parts.getOrNull(1)?.toIntOrNull() ?: 0
+            val pa = parts.getOrNull(2)?.toIntOrNull() ?: 2
+            val rev = parts.getOrNull(3)?.toIntOrNull() ?: 1
+            ma * 1000000 + mi * 10000 + pa * 100 + rev
         }
     }
 
@@ -65,11 +69,11 @@ android {
         debug {
             applicationIdSuffix = ".debug"
             versionNameSuffix = "-debug"
-            resValue("string", "app_name", "FreeTurn Debug")
+            resValue("string", "app_name", "VKKVN Debug")
             signingConfig = signingConfigs.findByName("release")
         }
         release {
-            resValue("string", "app_name", "FreeTurn")
+            resValue("string", "app_name", "VKKVN")
             signingConfig = signingConfigs.findByName("release")
             isMinifyEnabled = true
             isShrinkResources = true
