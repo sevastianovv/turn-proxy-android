@@ -5,6 +5,9 @@
 
 package com.freeturn.app.ui.screens.settings
 
+import android.content.Intent
+import android.net.Uri
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -62,6 +65,18 @@ fun AboutScreen(onBack: () -> Unit) {
         uriHandler.openUri(url)
     }
 
+    fun openTelegram(domain: String = "vk_kvn") {
+        HapticUtil.perform(context, HapticUtil.Pattern.SELECTION)
+        val tgIntent = Intent(Intent.ACTION_VIEW, Uri.parse("tg://resolve?domain=$domain")).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        try {
+            context.startActivity(tgIntent)
+        } catch (_: Exception) {
+            runCatching { uriHandler.openUri("https://t.me/$domain") }
+        }
+    }
+
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
@@ -105,10 +120,10 @@ fun AboutScreen(onBack: () -> Unit) {
                         SettingsEntryRow(
                             iconRes = R.drawable.public_24px,
                             title = stringResource(R.string.tg_channel),
-                            subtitle = "@vk_kvn_bot",
+                            subtitle = "@vk_kvn",
                             trailingRes = R.drawable.open_in_new_24px,
                             trailingTint = MaterialTheme.colorScheme.primary,
-                            onClick = { open("https://t.me/vk_kvn_bot") }
+                            onClick = { openTelegram("vk_kvn") }
                         )
                     }
                 }

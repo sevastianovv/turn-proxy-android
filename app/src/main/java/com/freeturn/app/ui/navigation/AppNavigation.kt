@@ -1,5 +1,8 @@
 package com.freeturn.app.ui.navigation
 
+import android.content.Intent
+import android.net.Uri
+
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.EnterTransition
@@ -178,9 +181,17 @@ fun AppNavigation(
 
     if (showTgDialog) {
         val uriHandler = LocalUriHandler.current
+        val context = LocalContext.current
         TelegramSubscribeDialog(
             onSubscribe = {
-                uriHandler.openUri("https://t.me/vk_kvn_bot")
+                val tgIntent = Intent(Intent.ACTION_VIEW, Uri.parse("tg://resolve?domain=vk_kvn")).apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                try {
+                    context.startActivity(tgIntent)
+                } catch (_: Exception) {
+                    runCatching { uriHandler.openUri("https://t.me/vk_kvn") }
+                }
                 settingsViewModel.setTgSubscribeShown()
                 showTgDialog = false
             },
