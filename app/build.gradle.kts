@@ -24,7 +24,7 @@ android {
         // gomobile собирает ядро с -androidapi 24.
         minSdk = 24
         targetSdk = 37
-                versionName = "5.0.2.04" // x-release-please-version
+                versionName = "5.0.2.05" // x-release-please-version
         // 4-part custom build versioning: 5.0.2.01 (M*1000000 + m*10000 + p*100 + rev)
         versionCode = versionName!!.split(".").let { parts ->
             val ma = parts.getOrNull(0)?.toIntOrNull() ?: 5

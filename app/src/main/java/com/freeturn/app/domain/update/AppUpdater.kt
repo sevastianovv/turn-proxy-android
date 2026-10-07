@@ -270,7 +270,7 @@ class AppUpdater(private val context: Context) {
             "http://192.168.1.43:3000/api/v1/repos/vasa/turn-proxy-android/releases/latest"
 
         private const val GITHUB_RELEASES_URL =
-            "https://api.github.com/repos/sevastianovv/turn-proxy-android/releases/latest"
+            "https://api.github.com/repos/sevastianovv/vkkvn-releases/releases/latest"
 
         private const val GITHUB_AUTH_HEADER = "" // Public repo
 

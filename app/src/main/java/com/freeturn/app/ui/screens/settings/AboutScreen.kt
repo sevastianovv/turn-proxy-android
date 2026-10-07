@@ -113,7 +113,7 @@ fun AboutScreen(onBack: () -> Unit) {
                             subtitle = "Релизы и обновления (GitHub)",
                             trailingRes = R.drawable.open_in_new_24px,
                             trailingTint = MaterialTheme.colorScheme.primary,
-                            onClick = { open("https://github.com/sevastianovv/turn-proxy-android/releases") }
+                            onClick = { open("https://github.com/sevastianovv/vkkvn-releases/releases") }
                         )
                     }
                     SettingsGroupItem(1, 2) {
