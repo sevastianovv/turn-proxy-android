@@ -91,34 +91,23 @@ fun AboutScreen(onBack: () -> Unit) {
 
                 SectionLabel(stringResource(R.string.about_links))
                 SettingsGroup {
-                    SettingsGroupItem(0, 3) {
+                    SettingsGroupItem(0, 2) {
                         SettingsEntryRow(
                             iconRes = R.drawable.code_24px,
                             title = stringResource(R.string.android_client),
-                            subtitle = "sevastianovv/turn-proxy-android",
-                            // Ссылка на релизы на GitHub (доступны версии VKKVN и FreeTurn)
+                            subtitle = "Релизы и обновления (GitHub)",
                             trailingRes = R.drawable.open_in_new_24px,
                             trailingTint = MaterialTheme.colorScheme.primary,
                             onClick = { open("https://github.com/sevastianovv/turn-proxy-android/releases") }
                         )
                     }
-                    SettingsGroupItem(1, 3) {
-                        SettingsEntryRow(
-                            iconRes = R.drawable.terminal_24px,
-                            title = stringResource(R.string.proxy_core),
-                            subtitle = "sevastianovv/free-turn-proxy",
-                            trailingRes = R.drawable.open_in_new_24px,
-                            trailingTint = MaterialTheme.colorScheme.primary,
-                            onClick = { open("https://github.com/sevastianovv/free-turn-proxy") }
-                        )
-                    }
-                    SettingsGroupItem(2, 3) {
+                    SettingsGroupItem(1, 2) {
                         SettingsEntryRow(
                             iconRes = R.drawable.public_24px,
                             title = stringResource(R.string.tg_channel),
+                            subtitle = "@vk_kvn_bot",
                             trailingRes = R.drawable.open_in_new_24px,
                             trailingTint = MaterialTheme.colorScheme.primary,
-                            subtitle = "@vk_kvn_bot",
                             onClick = { open("https://t.me/vk_kvn_bot") }
                         )
                     }

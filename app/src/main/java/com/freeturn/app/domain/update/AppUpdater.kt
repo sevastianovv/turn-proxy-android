@@ -89,10 +89,7 @@ class AppUpdater(private val context: Context) {
                         conn.connectTimeout = 15_000
                         conn.readTimeout = 30_000
 
-                        if (currentUrl.contains("api.github.com")) {
-                            conn.setRequestProperty("Authorization", GITHUB_AUTH_HEADER)
-                            conn.setRequestProperty("Accept", "application/octet-stream")
-                        }
+                        // Direct download from public browser_download_url
 
                         conn.connect()
                         val responseCode = conn.responseCode
@@ -201,7 +198,7 @@ class AppUpdater(private val context: Context) {
         try {
             val connection = URL(GITHUB_RELEASES_URL).openConnection() as HttpURLConnection
             connection.setRequestProperty("Accept", "application/vnd.github+json")
-            connection.setRequestProperty("Authorization", GITHUB_AUTH_HEADER)
+            // Public GitHub repository - no auth required
             connection.connectTimeout = 10_000
             connection.readTimeout = 10_000
             try {
@@ -226,11 +223,7 @@ class AppUpdater(private val context: Context) {
                 val asset = assets.getJSONObject(i)
                 val name = asset.getString("name")
                 if (name.endsWith(".apk")) {
-                    val downloadTarget = if (isGithub) {
-                        asset.getString("url")
-                    } else {
-                        asset.getString("browser_download_url")
-                    }
+                    val downloadTarget = asset.getString("browser_download_url")
                     put(name, downloadTarget)
                 }
             }
@@ -279,8 +272,7 @@ class AppUpdater(private val context: Context) {
         private const val GITHUB_RELEASES_URL =
             "https://api.github.com/repos/sevastianovv/turn-proxy-android/releases/latest"
 
-        private const val GITHUB_AUTH_HEADER =
-            "Bearer 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"
+        private const val GITHUB_AUTH_HEADER = "" // Public repo
 
         fun isNewer(remote: String, current: String): Boolean {
             val r = remote.split(".").map { it.toIntOrNull() ?: 0 }
